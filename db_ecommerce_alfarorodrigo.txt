@@ -1,0 +1,83 @@
+
+
+CREATE DATABASE IF NOT EXISTS db_ecommerce_alfarorodrigo CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE db_ecommerce_alfarorodrigo;
+
+-- Eliminar tablas si existen (para poder correr el script varias veces sin errores)
+DROP TABLE IF EXISTS detalle_pedido;
+DROP TABLE IF EXISTS pedidos;
+DROP TABLE IF EXISTS productos;
+DROP TABLE IF EXISTS usuarios_roles;
+DROP TABLE IF EXISTS usuarios;
+DROP TABLE IF EXISTS roles;
+
+-- Tabla Productos
+CREATE TABLE productos (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    categoria VARCHAR(50) NOT NULL,
+    precio DECIMAL(10,2) NOT NULL,
+    stock INT NOT NULL,
+    marca VARCHAR(50) NOT NULL,
+    codigo_barras VARCHAR(50) UNIQUE NOT NULL
+) ENGINE=InnoDB;
+
+-- Tabla Pedidos
+CREATE TABLE pedidos (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    cliente VARCHAR(100) NOT NULL,
+    fecha_compra DATETIME NOT NULL,
+    monto_total DECIMAL(10,2) NOT NULL,
+    estado_pedido VARCHAR(50) NOT NULL,
+    metodo_pago VARCHAR(50) NOT NULL
+) ENGINE=InnoDB;
+
+-- Tabla Detalle Pedido
+CREATE TABLE detalle_pedido (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    pedido_id BIGINT NOT NULL,
+    producto_id BIGINT NOT NULL,
+    cantidad INT NOT NULL,
+    precio_unitario DECIMAL(10,2) NOT NULL,
+    subtotal DECIMAL(10,2) NOT NULL,
+    FOREIGN KEY (pedido_id) REFERENCES pedidos(id) ON DELETE CASCADE,
+    FOREIGN KEY (producto_id) REFERENCES productos(id)
+) ENGINE=InnoDB;
+
+CREATE TABLE roles (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(30) NOT NULL UNIQUE
+) ENGINE=InnoDB;
+
+CREATE TABLE usuarios (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(100) NOT NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE usuarios_roles (
+    usuario_id BIGINT NOT NULL,
+    rol_id BIGINT NOT NULL,
+    PRIMARY KEY (usuario_id, rol_id),
+    CONSTRAINT fk_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios (id) ON DELETE CASCADE,
+    CONSTRAINT fk_rol FOREIGN KEY (rol_id) REFERENCES roles (id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+INSERT INTO productos (nombre, categoria, precio, stock, marca, codigo_barras) VALUES 
+('Laptop Gamer Asus ROG', 'Laptops', 1250.00, 15, 'Asus', '1234567890123'),
+('Smartphone Samsung S23', 'Smartphones', 850.00, 25, 'Samsung', '9876543210987'),
+('Audifonos Sony WH-1000XM5', 'Audio', 380.00, 30, 'Sony', '5556667778889');
+
+INSERT IGNORE INTO roles (nombre) VALUES ('ROLE_ADMIN');
+INSERT IGNORE INTO roles (nombre) VALUES ('ROLE_USER');
+
+INSERT IGNORE INTO usuarios (username, password) VALUES ('admin', '$2a$10$4PyU0gzovBbkEw2cHNZ3UeNdKyIWt9f.zLuDQoGrlQ0Sr.Pg20Z1K');
+INSERT IGNORE INTO usuarios (username, password) VALUES ('carlos', '$2a$10$a.1MTyxHAp92Ku0ufxdeMOPIxxI5KnQc.dXF2LMR8dMskFe5EJtxC');
+
+INSERT IGNORE INTO usuarios_roles (usuario_id, rol_id) 
+SELECT u.id, r.id FROM usuarios u, roles r 
+WHERE u.username = 'admin' AND r.nombre IN ('ROLE_ADMIN', 'ROLE_USER');
+
+INSERT IGNORE INTO usuarios_roles (usuario_id, rol_id) 
+SELECT u.id, r.id FROM usuarios u, roles r 
+WHERE u.username = 'carlos' AND r.nombre = 'ROLE_USER';
